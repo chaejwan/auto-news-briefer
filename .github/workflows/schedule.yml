@@ -9,14 +9,6 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-env:
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        EMAIL_USER: ${{ secrets.EMAIL_USER }}
-        EMAIL_APP_PASS: ${{ secrets.EMAIL_APP_PASS }}
-        COMPANY_EMAIL: ${{ secrets.COMPANY_EMAIL }}
-        GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
-        GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -28,15 +20,18 @@ jobs:
     - name: Node.js 설치하기
       uses: actions/setup-node@v4
       with:
-        node-version: '24'  # 2. 우리가 사용할 버전을 20에서 24로 변경
+        node-version: '24'  # 우리가 사용할 버전을 20에서 24로 변경
         
     - name: 라이브러리 설치 (npm install)
       run: npm install
       
     - name: 메인 스크립트 실행
       env:
+        # 모든 시크릿(비밀번호) 환경 변수는 이 아래로 한 번에 모아줍니다.
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
         EMAIL_APP_PASS: ${{ secrets.EMAIL_APP_PASS }}
         COMPANY_EMAIL: ${{ secrets.COMPANY_EMAIL }}
+        GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+        GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
       run: node index.js
