@@ -96,7 +96,7 @@ async function main() {
         if (finalNewsList.length === 0) return;
 
         // 3. AI 요약 및 메일 발송 (이전 로직 동일)
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-light-preview" });
         const newsText = finalNewsList.map((n, i) => `[${n.source}] ${n.title}\n${n.link}`).join('\n\n');
         
         const prompt = `당신은 기업 전략 기획자입니다. 다음 뉴스 리스트를 분석하여 핵심 트렌드를 요약해 주세요. 중복된 내용은 하나로 합치고, 가장 중요한 소식부터 배열해 주세요.\n\n${newsText}`;
