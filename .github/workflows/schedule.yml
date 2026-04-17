@@ -1,0 +1,31 @@
+name: Daily News Briefing
+
+on:
+  schedule:
+    # 매주 월~금, 한국 시간 오전 9시 (UTC 기준 0시) 에 실행
+    - cron: '0 0 * * 1-5'
+  workflow_dispatch: # 수동 실행 버튼을 만들어주는 마법의 명령어
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 저장소 코드 가져오기
+      uses: actions/checkout@v4
+    
+    - name: Node.js 설치하기
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: 라이브러리 설치 (npm install)
+      run: npm install
+      
+    - name: 메인 스크립트 실행
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        EMAIL_USER: ${{ secrets.EMAIL_USER }}
+        EMAIL_APP_PASS: ${{ secrets.EMAIL_APP_PASS }}
+        COMPANY_EMAIL: ${{ secrets.COMPANY_EMAIL }}
+      run: node index.js
