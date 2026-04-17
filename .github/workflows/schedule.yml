@@ -2,9 +2,12 @@ name: Daily News Briefing
 
 on:
   schedule:
-    # 매주 월~금, 한국 시간 오전 9시 (UTC 기준 0시) 에 실행
     - cron: '0 0 * * 1-5'
-  workflow_dispatch: # 수동 실행 버튼을 만들어주는 마법의 명령어
+  workflow_dispatch:
+
+# 1. GitHub 시스템 액션 버전을 Node 24로 강제 승급 (경고 메시지 해결)
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -17,7 +20,7 @@ jobs:
     - name: Node.js 설치하기
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '24'  # 2. 우리가 사용할 버전을 20에서 24로 변경
         
     - name: 라이브러리 설치 (npm install)
       run: npm install
