@@ -27,7 +27,7 @@ async function fetchNews() {
 
 async function summarizeNews(newsItems) {
     console.log("🧠 Gemini 모델이 뉴스를 분석하고 요약합니다...");
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
+    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" }); 
     const newsText = newsItems.map((n, i) => `[${i+1}] 제목: ${n.title}\n내용: ${n.content}\n링크: ${n.link}`).join('\n\n');
     
     const prompt = `
