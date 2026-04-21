@@ -1,4 +1,6 @@
 {
+  "recipientEmail": "chaejwan@hd.com",
+  "googleNewsApi": "https://news.google.com/rss/search?q={keyword}&hl=ko&gl=KR&ceid=KR:ko&tbs=qdr:d",
   "keywords": [
     "한화오션",
     "삼성중공업",
