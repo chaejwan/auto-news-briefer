@@ -12,6 +12,6 @@
     { "name": "한국경제(IT)", "url": "https://rss.hankyung.com/feed/it.xml" },
     { "name": "조선일보(경제)", "url": "https://www.chosun.com/site/data/rss/biz.xml" }
   ],
-  "summaryInstruction": "각 키워드별 핵심 동향을 2~3줄로 명확하고 건조하게 요약할 것. 불필요한 인사말이나 미사여구는 절대 넣지 말 것.",
+  "summaryInstruction": "불필요한 인사말이나 맺음말은 절대 쓰지 마세요. 제공된 뉴스 데이터를 바탕으로 각 키워드마다 반드시 아래의 '출력 양식'을 정확히 지켜서 출력하세요.\n\n[출력 양식]\n<키워드>\n(여기에 해당 키워드의 전반적인 핵심 동향을 2~3줄로 요약)\n언론사명 / <a href='URL' target='_blank'>기사제목</a>\n언론사명 / <a href='URL' target='_blank'>기사제목</a>\n\n[주의사항]\n- 기사 목록 앞에 글머리 기호(bullet)나 숫자를 붙이지 마세요.\n- 마크다운 링크 문법([제목](URL))을 절대 사용하지 말고, 반드시 예시처럼 HTML <a> 태그를 사용하여 클릭 가능하게 만드세요.",
   "emailSubject": "[핵심 키워드 브리핑] 일일 뉴스 모니터링"
 }
