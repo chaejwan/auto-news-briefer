@@ -29,23 +29,33 @@ async function main() {
             console.log(`\n🔍 [키워드: ${keyword}] 수집 중...`);
             let keywordNews = [];
 
-            // A. config.json에 등록된 구글 뉴스 API 규칙 사용
             const gnUrl = config.googleNewsApi.replace('{keyword}', encodeURIComponent(keyword));
             const gnItems = await safeFetchRSS(gnUrl);
-            const gnMapped = gnItems.slice(0, 10).map(item => ({ source: '구글뉴스', title: item.title, link: item.link }));
+            
+            // ⭐ 변경점: item.contentSnippet (본문 힌트)를 추가로 가져옵니다.
+            const gnMapped = gnItems.slice(0, 10).map(item => ({ 
+                source: '구글뉴스', 
+                title: item.title, 
+                link: item.link,
+                snippet: (item.contentSnippet || '').substring(0, 150)
+            }));
             keywordNews = keywordNews.concat(gnMapped);
             console.log(`   - 구글뉴스에서 ${gnMapped.length}개 발견`);
 
-            // B. 등록된 언론사 RSS 뒤지기
             for (const rss of config.rssSources) {
                 const rssItems = await safeFetchRSS(rss.url);
+                // 일반 RSS는 일단 제목에 키워드가 있는 것만 1차로 거릅니다.
                 const filtered = rssItems.filter(item => item.title.includes(keyword));
-                const rssMapped = filtered.slice(0, 10).map(item => ({ source: rss.name, title: item.title, link: item.link }));
+                const rssMapped = filtered.slice(0, 10).map(item => ({ 
+                    source: rss.name, 
+                    title: item.title, 
+                    link: item.link,
+                    snippet: (item.contentSnippet || '').substring(0, 150)
+                }));
                 keywordNews = keywordNews.concat(rssMapped);
                 console.log(`   - ${rss.name}에서 ${rssMapped.length}개 발견`);
             }
 
-            // C. 중복 제거
             const uniqueMap = new Map();
             keywordNews.forEach(item => {
                 const cleanUrl = item.link.split('?')[0];
@@ -63,7 +73,8 @@ async function main() {
             if (items.length > 0) {
                 promptData += `\n\n### 키워드: ${keyword} ###\n`;
                 items.forEach(n => {
-                    promptData += `- [${n.source}] ${n.title}\n  ${n.link}\n`;
+                    // ⭐ 변경점: 프롬프트에 '내용 힌트'를 추가로 밀어 넣습니다.
+                    promptData += `- [${n.source}] ${n.title}\n  (내용 힌트: ${n.snippet})\n  ${n.link}\n`;
                 });
                 totalArticles += items.length;
             }
@@ -87,7 +98,6 @@ async function main() {
         const result = await model.generateContent(prompt);
         const summary = result.response.text();
 
-        // 이메일 발송 (발신자는 Secrets에서, 수신자는 config.json에서 가져옴)
         console.log("✉️ 이메일 발송 시도 중...");
         const transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -103,7 +113,7 @@ async function main() {
 
         const info = await transporter.sendMail({
             from: process.env.EMAIL_USER,
-            to: config.recipientEmail, // config.json에서 불러오기!
+            to: config.recipientEmail,
             subject: config.emailSubject,
             html: summary.replace(/\n/g, '<br>')
         });
