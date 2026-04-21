@@ -1,5 +1,5 @@
 {
-  "recipientEmail": "chaejwan@hd.com",
+  "recipientEmail": "수신받으실_회사이메일@도메인.com",
   "googleNewsApi": "https://news.google.com/rss/search?q={keyword}&hl=ko&gl=KR&ceid=KR:ko&tbs=qdr:d",
   "keywords": [
     "한화오션",
@@ -12,6 +12,6 @@
     { "name": "한국경제(IT)", "url": "https://rss.hankyung.com/feed/it.xml" },
     { "name": "조선일보(경제)", "url": "https://www.chosun.com/site/data/rss/biz.xml" }
   ],
-  "summaryInstruction": "불필요한 인사말이나 맺음말은 절대 쓰지 마세요. 제공된 뉴스 데이터를 바탕으로 각 키워드마다 반드시 아래의 '출력 양식'을 정확히 지켜서 출력하세요.\n\n[출력 양식]\n<키워드>\n(여기에 해당 키워드의 전반적인 핵심 동향을 2~3줄로 요약)\n언론사명 / <a href='URL' target='_blank'>기사제목</a>\n언론사명 / <a href='URL' target='_blank'>기사제목</a>\n\n[주의사항]\n- 기사 목록 앞에 글머리 기호(bullet)나 숫자를 붙이지 마세요.\n- 마크다운 링크 문법([제목](URL))을 절대 사용하지 말고, 반드시 예시처럼 HTML <a> 태그를 사용하여 클릭 가능하게 만드세요.",
+  "summaryInstruction": "불필요한 인사말이나 맺음말은 절대 쓰지 마세요. 제공된 뉴스 데이터를 바탕으로 각 키워드마다 반드시 아래의 '[출력 양식]'을 100% 똑같이 지켜서 출력하세요.\n\n[문맥 필터링 지시 - 매우 중요!]\n제공된 '(내용 힌트)'를 읽어보고, 해당 키워드가 기사의 메인 주제가 아니라 경쟁사 단순 언급, 주식 시황 나열 등 '조연' 역할에 불과하다고 판단되면 그 기사는 요약 및 리스트에서 과감하게 완전히 제외하세요. 확실히 관련 있는 기사만 남겨야 합니다.\n\n[출력 양식]\n<키워드명>\n(여기에 남은 기사들을 바탕으로 핵심 동향을 2~3줄로 요약)\n언론사명 / <a href='URL' target='_blank'>기사제목</a>\n언론사명 / <a href='URL' target='_blank'>기사제목</a>\n\n[엄격한 주의사항]\n1. 절대로 '<키워드명>' 부분을 생략하지 마세요. (예: <한화오션> 처럼 꺽쇠 기호를 포함하여 반드시 섹션 제목을 명시할 것)\n2. 기사 목록 앞에 글머리 기호(-, *)나 숫자를 임의로 붙이지 마세요.\n3. 마크다운 링크 문법을 절대 사용하지 말고, 반드시 <a> 태그를 사용하세요.",
   "emailSubject": "[핵심 키워드 브리핑] 일일 뉴스 모니터링"
 }
