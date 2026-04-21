@@ -32,6 +32,12 @@ jobs:
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
         EMAIL_APP_PASS: ${{ secrets.EMAIL_APP_PASS }}
         COMPANY_EMAIL: ${{ secrets.COMPANY_EMAIL }}
-        GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
-        GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+      run: node index.js
+
+      - name: 메인 스크립트 실행
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        EMAIL_USER: ${{ secrets.EMAIL_USER }}
+        EMAIL_APP_PASS: ${{ secrets.EMAIL_APP_PASS }}
+        COMPANY_EMAIL: ${{ secrets.COMPANY_EMAIL }}
       run: node index.js
