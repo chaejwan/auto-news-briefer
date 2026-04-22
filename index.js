@@ -41,15 +41,25 @@ async function main() {
             keywordNews = keywordNews.concat(gnMapped);
             console.log(`   - 구글뉴스에서 ${gnMapped.length}개 발견`); // ⭐ 로그 복구 완료
 
-            // 2. RSS 소스
+            // 2. RSS 소스 (스마트 매칭 적용)
+            // 키워드에서 공백을 모두 없애고 소문자로 변환 (예: "AI 반도체" -> "ai반도체")
+            const normalizedKeyword = keyword.replace(/\s+/g, '').toLowerCase();
+
             for (const rss of config.rssSources) {
                 const rssItems = await safeFetchRSS(rss.url);
-                const filtered = rssItems.filter(item => item.title.includes(keyword) || (item.contentSnippet && item.contentSnippet.includes(keyword)));
+                const filtered = rssItems.filter(item => {
+                    // 기사 제목과 요약문에서도 공백을 없애고 소문자로 변환하여 비교
+                    const itemTitle = (item.title || '').replace(/\s+/g, '').toLowerCase();
+                    const itemSnippet = (item.contentSnippet || '').replace(/\s+/g, '').toLowerCase();
+                    
+                    return itemTitle.includes(normalizedKeyword) || itemSnippet.includes(normalizedKeyword);
+                });
+                
                 const rssMapped = filtered.slice(0, 5).map(item => ({ 
                     source: rss.name, title: item.title, link: item.link, snippet: (item.contentSnippet || '').substring(0, 150) 
                 }));
                 keywordNews = keywordNews.concat(rssMapped);
-                console.log(`   - ${rss.name}에서 ${rssMapped.length}개 발견`); // ⭐ 로그 복구 완료
+                console.log(`   - ${rss.name}에서 ${rssMapped.length}개 발견`);
             }
 
             // 3. 중복 제거 (URL 기준)
