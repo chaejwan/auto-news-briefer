@@ -10,10 +10,27 @@
     "AI 반도체"
   ],
   "rssSources": [
+    // [1] 경제/비즈니스 전문지
     { "name": "매일경제(기업)", "url": "https://www.mk.co.kr/rss/50300009/" },
-    { "name": "지디넷코리아(IT)", "url": "https://feeds.feedburner.com/zdkorea" },
+    { "name": "한국경제(경제)", "url": "https://www.hankyung.com/feed/economy" },
+    { "name": "서울경제(경제)", "url": "https://m.sedaily.com/rss/economy" },
     { "name": "머니투데이(경제)", "url": "https://rss.mt.co.kr/mt_news.xml" },
-    { "name": "조선일보(경제)", "url": "https://www.chosun.com/arc/outboundfeeds/rss/category/economy/?outputType=xml" }
+    { "name": "파이낸셜뉴스(경제)", "url": "https://www.fnnews.com/rss/new/fn_realnews_economy.xml" },
+    { "name": "아시아경제(경제)", "url": "https://view.asiae.co.kr/rss/economy.xml" },
+
+    // [2] IT/테크 전문지 (반도체 키워드 특화)
+    { "name": "지디넷코리아(IT)", "url": "https://feeds.feedburner.com/zdkorea" },
+    { "name": "전자신문(IT)", "url": "https://rss.etnews.com/Section902.xml" },
+    
+    // [3] 종합 일간지 (경제 섹션)
+    { "name": "조선일보(경제)", "url": "https://www.chosun.com/arc/outboundfeeds/rss/category/economy/?outputType=xml" },
+    { "name": "중앙일보(경제)", "url": "https://rss.joins.com/joins_money_list.xml" },
+    { "name": "동아일보(경제)", "url": "https://rss.donga.com/economy.xml" },
+    { "name": "한겨레(경제)", "url": "http://www.hani.co.kr/rss/economy/" },
+    { "name": "경향신문(경제)", "url": "https://www.khan.co.kr/rss/rssdata/economy_news.xml" },
+    
+    // [4] 국가 기간통신사
+    { "name": "연합뉴스(경제)", "url": "https://www.yna.co.kr/rss/economy.xml" }
   ],
   "summaryInstruction": "당신은 핵심만 짚어내는 기업 분석가입니다. [중요] 동일한 사건에 대한 중복 기사가 많을 경우, 가장 정보 가치가 높은 기사 하나를 메인으로 삼아 요약하고 나머지 기사는 과감히 생략하세요. 특히 주가 등락과 같은 단순 시황 정보가 너무 많다면 이를 1~2문장으로 통합하여 짧게 언급하고, 기술 개발이나 수주 소식 같은 실질적 경영 동향에 더 비중을 두어 분석하세요.",
   "emailSubject": "[종합 브리핑] 주요 키워드 일일 리포트"
