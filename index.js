@@ -45,7 +45,7 @@ async function main() {
             for (const rss of config.rssSources) {
                 const rssItems = await safeFetchRSS(rss.url);
                 // 일반 RSS는 일단 제목에 키워드가 있는 것만 1차로 거릅니다.
-                const filtered = rssItems.filter(item => item.title.includes(keyword));
+                const filtered = rssItems.filter(item => item.title.includes(keyword) || (item.contentSnippet && item.contentSnippet.includes(keyword)));
                 const rssMapped = filtered.slice(0, 10).map(item => ({ 
                     source: rss.name, 
                     title: item.title, 
