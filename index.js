@@ -23,8 +23,8 @@ async function main() {
         const groupedNews = {};
         let totalArticles = 0;
 
-        // 기간 설정값 처리 (1d -> d)
-        const windowCode = config.timeWindow.replace(/[0-9]/g, '');
+        // 기간 설정값 변환 (예: 25h -> h25, 7d -> d7)
+        const windowCode = config.timeWindow.replace(/([0-9]+)([a-zA-Z]+)/, '$2$1');
 
         for (const keyword of config.keywords) {
             console.log(`\n🔍 [키워드: ${keyword}] 수집 중...`);
