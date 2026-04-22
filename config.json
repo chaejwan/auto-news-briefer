@@ -1,5 +1,5 @@
 {
-  "recipientEmail": "수신받으실_회사이메일@도메인.com",
+  "recipientEmail": "chaejwan@hd.com",
   "googleNewsApi": "https://news.google.com/rss/search?q={keyword}&hl=ko&gl=KR&ceid=KR:ko&tbs=qdr:d",
   "keywords": [
     "한화오션",
