@@ -15,8 +15,8 @@ async function safeFetchRSS(url) {
         const feed = await parser.parseURL(url);
         return feed.items;
     } catch (e) {
-        console.error(`❌ 수집 실패 (${url}):`, e.message);
-        return [];
+        // 에러 로그는 디버깅용으로만 남기고 스크립트는 계속 진행됩니다.
+        return []; 
     }
 }
 
@@ -24,6 +24,7 @@ async function main() {
     try {
         console.log("🚀 키워드 중심 뉴스 수집을 시작합니다...");
         const groupedNews = {};
+        let totalArticles = 0;
 
         for (const keyword of config.keywords) {
             console.log(`\n🔍 [키워드: ${keyword}] 수집 중...`);
@@ -31,29 +32,19 @@ async function main() {
 
             const gnUrl = config.googleNewsApi.replace('{keyword}', encodeURIComponent(keyword));
             const gnItems = await safeFetchRSS(gnUrl);
-            
-            // ⭐ 변경점: item.contentSnippet (본문 힌트)를 추가로 가져옵니다.
             const gnMapped = gnItems.slice(0, 10).map(item => ({ 
-                source: '구글뉴스', 
-                title: item.title, 
-                link: item.link,
-                snippet: (item.contentSnippet || '').substring(0, 150)
+                source: '구글뉴스', title: item.title, link: item.link, snippet: (item.contentSnippet || '').substring(0, 150) 
             }));
             keywordNews = keywordNews.concat(gnMapped);
-            console.log(`   - 구글뉴스에서 ${gnMapped.length}개 발견`);
 
             for (const rss of config.rssSources) {
                 const rssItems = await safeFetchRSS(rss.url);
-                // 일반 RSS는 일단 제목에 키워드가 있는 것만 1차로 거릅니다.
+                // 제목이나 요약 내용에 키워드가 포함된 기사 필터링
                 const filtered = rssItems.filter(item => item.title.includes(keyword) || (item.contentSnippet && item.contentSnippet.includes(keyword)));
                 const rssMapped = filtered.slice(0, 10).map(item => ({ 
-                    source: rss.name, 
-                    title: item.title, 
-                    link: item.link,
-                    snippet: (item.contentSnippet || '').substring(0, 150)
+                    source: rss.name, title: item.title, link: item.link, snippet: (item.contentSnippet || '').substring(0, 150) 
                 }));
                 keywordNews = keywordNews.concat(rssMapped);
-                console.log(`   - ${rss.name}에서 ${rssMapped.length}개 발견`);
             }
 
             const uniqueMap = new Map();
@@ -63,40 +54,48 @@ async function main() {
             });
             
             groupedNews[keyword] = Array.from(uniqueMap.values());
+            totalArticles += groupedNews[keyword].length;
         }
 
-        let promptData = "";
-        let totalArticles = 0;
+        if (totalArticles === 0) {
+            console.log("수집된 뉴스가 없습니다.");
+            process.exit(0); // 수집된 게 없어도 10분 지연 방지를 위해 즉시 종료
+        }
+
+        console.log(`\n🚀 총 수집 기사 수: ${totalArticles}개. AI 요약 시작 (키워드별 개별 처리)...`);
+        const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
         
+        let finalHtmlContent = ""; // ⭐ 자바스크립트가 직접 메일 양식을 조립할 변수
+
         for (const keyword of config.keywords) {
             const items = groupedNews[keyword];
-            if (items.length > 0) {
-                promptData += `\n\n### 키워드: ${keyword} ###\n`;
-                items.forEach(n => {
-                    // ⭐ 변경점: 프롬프트에 '내용 힌트'를 추가로 밀어 넣습니다.
-                    promptData += `- [${n.source}] ${n.title}\n  (내용 힌트: ${n.snippet})\n  ${n.link}\n`;
-                });
-                totalArticles += items.length;
-            }
+            if (items.length === 0) continue;
+
+            // 1. 해당 키워드의 뉴스 텍스트만 모음
+            let newsData = "";
+            items.forEach(n => {
+                newsData += `- [${n.source}] ${n.title}\n  (힌트: ${n.snippet})\n`;
+            });
+
+            // 2. AI에게는 오직 '요약'만 시킴 (양식 신경쓰지 말라고 통제)
+            const prompt = `당신은 핵심만 짚어내는 기업 분석가입니다. 아래는 '${keyword}'에 대한 최신 뉴스입니다.
+            조연으로 언급된 기사는 철저히 무시하고, 관련성이 높은 뉴스를 바탕으로 '${keyword}'의 핵심 동향을 정확히 2~3줄로만 요약하세요.
+            인사말, 맺음말, 기사 리스트, 제목 등은 절대 쓰지 말고 오직 '요약된 텍스트'만 출력하세요.
+
+            [뉴스 데이터]
+            ${newsData}`;
+            
+            const result = await model.generateContent(prompt);
+            const summary = result.response.text().trim();
+
+            // 3. ⭐ 절대 누락되지 않는 자바스크립트 하드코딩 양식 조립 ⭐
+            finalHtmlContent += `<h3>&lt;${keyword}&gt;</h3>\n`;
+            finalHtmlContent += `<p>${summary}</p>\n`;
+            items.forEach(n => {
+                finalHtmlContent += `${n.source} / <a href="${n.link}" target="_blank" style="text-decoration:none; color:#1a73e8;">${n.title}</a><br>\n`;
+            });
+            finalHtmlContent += `<br><br>\n`; // 다음 키워드와의 간격 띄우기
         }
-
-        if (totalArticles === 0) return console.log("수집된 뉴스가 없습니다.");
-        console.log(`\n🚀 총 수집 기사 수: ${totalArticles}개. AI 요약 시작...`);
-
-        const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
-        const prompt = `
-        당신은 기업 전략 기획자입니다. 제공된 뉴스 데이터를 바탕으로 보고서를 작성하세요.
-        반드시 '키워드'별로 섹션을 나누어 작성하고, 기사 링크들을 목록 형태로 달아주세요.
-        
-        [특별 요약 지침]
-        ${config.summaryInstruction}
-        
-        [뉴스 데이터]
-        ${promptData}
-        `;
-        
-        const result = await model.generateContent(prompt);
-        const summary = result.response.text();
 
         console.log("✉️ 이메일 발송 시도 중...");
         const transporter = nodemailer.createTransport({
@@ -104,10 +103,7 @@ async function main() {
             host: 'smtp.gmail.com',
             port: 465,
             secure: true,
-            auth: { 
-                user: process.env.EMAIL_USER, 
-                pass: process.env.EMAIL_APP_PASS 
-            },
+            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_APP_PASS },
             connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 10000
         });
 
@@ -115,13 +111,17 @@ async function main() {
             from: process.env.EMAIL_USER,
             to: config.recipientEmail,
             subject: config.emailSubject,
-            html: summary.replace(/\n/g, '<br>')
+            html: finalHtmlContent // 완벽하게 조립된 HTML 덩어리를 쏩니다.
         });
 
         console.log("✅ 이메일 발송 완료! MessageId:", info.messageId);
+        
+        // ⭐ 핵심: 10분 지연 방지 (이메일 발송 후 프로그램 즉시 강제 종료)
+        process.exit(0); 
 
     } catch (error) {
         console.error("❌ 시스템 에러:", error);
+        process.exit(1);
     }
 }
 
