@@ -36,31 +36,7 @@ function cleanHtml(text) {
     return text.replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 }
 
-// ⭐ 4. [신규] 제목 유사도 계산 함수 (보도자료 도배 방지)
-function calculateTitleSimilarity(title1, title2) {
-    // 공백을 없애고 2글자씩 쪼개서 비교 (Bi-gram 방식)
-    const tokenize = text => {
-        const cleanText = text.replace(/\s+/g, '').toLowerCase();
-        const tokens = new Set();
-        for (let i = 0; i < cleanText.length - 1; i++) {
-            tokens.add(cleanText.substring(i, i + 2));
-        }
-        return tokens;
-    };
-
-    const set1 = tokenize(title1);
-    const set2 = tokenize(title2);
-
-    let intersection = 0;
-    for (const token of set1) {
-        if (set2.has(token)) intersection++;
-    }
-
-    const union = set1.size + set2.size - intersection;
-    return union === 0 ? 0 : (intersection / union);
-}
-
-// 5. 네이버 뉴스 수집 함수
+// 4. 네이버 뉴스 수집 (쌍따옴표 정확히 일치 적용)
 async function fetchNaverNews(keyword, timeWindow) {
     const clientId = process.env.NAVER_CLIENT_ID;
     const clientSecret = process.env.NAVER_CLIENT_SECRET;
@@ -83,7 +59,7 @@ async function fetchNaverNews(keyword, timeWindow) {
     } catch (e) { return []; }
 }
 
-// 6. 구글 뉴스 수집 함수
+// 5. 구글 뉴스 수집
 async function safeFetchRSS(url) {
     try {
         const feed = await parser.parseURL(url);
@@ -116,25 +92,15 @@ async function main() {
             const naverItems = await fetchNaverNews(keyword, config.timeWindow);
             keywordNews = keywordNews.concat(naverItems);
 
-            // ⭐ [핵심 개선] URL 중복 + 제목 유사도 중복 철저 필터링
+            // 1차 방어: 똑같은 URL만 가볍게 제거 (복잡한 제목 유사도는 AI에게 넘김)
             const uniqueItems = [];
             keywordNews.forEach(item => {
-                // (물음표를 자르는 로직을 완전히 삭제했습니다. 원본 주소를 그대로 보존합니다.)
-
-                // 1차 방어: 똑같은 URL 차단 (원본 주소 그대로 비교)
                 const isUrlDuplicate = uniqueItems.some(existing => existing.link === item.link);
-                if (isUrlDuplicate) return;
-
-                // 2차 방어: 제목이 40% 이상 비슷하면(보도자료 복붙) 차단
-                const isTitleDuplicate = uniqueItems.some(existing => calculateTitleSimilarity(existing.title, item.title) > 0.4);
-                if (isTitleDuplicate) return;
-
-                uniqueItems.push(item);
+                if (!isUrlDuplicate) uniqueItems.push(item);
             });
             
             groupedNews[keyword] = uniqueItems;
             totalArticles += uniqueItems.length;
-            console.log(`   - 최종 정제된 기사 수: ${uniqueItems.length}개 (중복 스팸 제거 완료)`);
         }
 
         if (totalArticles === 0) {
@@ -142,7 +108,7 @@ async function main() {
             process.exit(0);
         }
 
-        console.log(`\n🚀 총 수집 기사 수: ${totalArticles}개. AI 테마별 분석 시작...`);
+        console.log(`\n🚀 AI 분석 및 지능형 중복 제거 시작...`);
         const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
         
         let finalHtmlContent = "";
@@ -151,27 +117,50 @@ async function main() {
             const items = groupedNews[keyword];
             if (items.length === 0) continue;
 
-            let newsData = items.map(n => `- [${n.source}] ${n.title}\n  (힌트: ${n.snippet})`).join('\n\n');
+            // ⭐ 기사마다 고유 ID 번호를 부여해서 AI에게 전달
+            let newsData = items.map((n, idx) => `[ID: ${idx}] [${n.source}] ${n.title}\n  (내용: ${n.snippet})`).join('\n\n');
 
-            const prompt = `당신은 핵심만 분석하는 기업 전략가입니다. 아래는 '${keyword}'에 대한 검색 결과입니다.
+            const prompt = `당신은 기업 전략가입니다. 아래는 '${keyword}'에 대한 최신 뉴스입니다.
             
             [지침 - 매우 중요!]
-            1. 제공된 [뉴스 데이터]를 꼼꼼히 읽어보세요. 만약 기사들이 '${keyword}'와 전혀 무관하거나 엉뚱한 내용뿐이라면, 절대 억지로 지어내서 요약하지 말고 오직 "현재 수집된 유의미한 관련 기사가 없습니다."라고만 출력하세요.
-            2. 관련 기사가 명확히 존재할 경우에만, 공통된 흐름을 파악하여 2~3줄로 요약하세요.
-            3. 인사말, 맺음말 등 불필요한 문장은 절대 쓰지 마세요.
+            1. 제공된 [뉴스 데이터]를 꼼꼼히 읽어보세요. '${keyword}'와 무관하거나 유의미한 내용이 없다면 요약에 "현재 수집된 유의미한 관련 기사가 없습니다."라고만 적으세요.
+            2. [중복 제거] 여러 언론사가 제목만 바꿔서 보도한 '동일한 사건(예: 특정 정치인의 같은 행보, 한 기업의 단일 보도자료)'은 가장 핵심적인 기사 딱 1개(ID)만 남기고 나머지는 모조리 버리세요.
+            3. 중복을 제거하고 살아남은 핵심 기사들의 ID를 고르세요 (최대 5개).
+            4. 반드시 아래의 JSON 형식으로만 답변을 출력하세요. 마크다운 기호(\`\`\`)도 쓰지 마세요.
+            
+            {
+              "summary": "핵심 동향 2~3줄 요약 (또는 '관련 기사 없음')",
+              "best_ids": [살아남은 기사의 ID 숫자들]
+            }
             
             [뉴스 데이터]
             ${newsData}`;
             
             const result = await model.generateContent(prompt);
-            const summary = result.response.text().trim();
-
-            finalHtmlContent += `<h3>&lt;${keyword}&gt;</h3>\n<p>${summary}</p>\n`;
+            const responseText = result.response.text().trim();
             
-            // 메일에는 최대 10개의 핵심 기사만 노출하여 가독성 확보
-            items.slice(0, 10).forEach(n => {
-                finalHtmlContent += `${n.source} / ${n.date} / <a href="${n.link}" target="_blank" style="text-decoration:none; color:#1a73e8;">${n.title}</a><br>\n`;
-            });
+            // AI가 준 JSON 답변 파싱
+            let aiResult;
+            try {
+                const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                aiResult = JSON.parse(jsonMatch[0]);
+            } catch (e) {
+                console.error("JSON 파싱 에러:", e);
+                aiResult = { summary: "AI 분석 중 오류가 발생했습니다.", best_ids: [] };
+            }
+
+            finalHtmlContent += `<h3>&lt;${keyword}&gt;</h3>\n<p>${aiResult.summary}</p>\n`;
+            
+            // ⭐ '관련 기사가 없습니다'라고 판단한 경우 기사 리스트를 아예 출력하지 않음
+            if (!aiResult.summary.includes("유의미한 관련 기사가 없")) {
+                // AI가 선택한 진짜 알짜배기 기사들만 추출
+                const selectedItems = aiResult.best_ids.map(id => items[id]).filter(item => item !== undefined);
+                const displayItems = selectedItems.length > 0 ? selectedItems : items.slice(0, 3);
+                
+                displayItems.forEach(n => {
+                    finalHtmlContent += `${n.source} / ${n.date} / <a href="${n.link}" target="_blank" style="text-decoration:none; color:#1a73e8;">${n.title}</a><br>\n`;
+                });
+            }
             finalHtmlContent += `<br><br>\n`;
         }
 
