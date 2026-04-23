@@ -66,7 +66,7 @@ async function fetchNaverNews(keyword, timeWindow) {
     const clientSecret = process.env.NAVER_CLIENT_SECRET;
     if (!clientId || !clientSecret) return [];
 
-    const url = `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(keyword)}&display=30&sort=date`;
+    const url = `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent('"' + keyword + '"')}&display=30&sort=date`;
     try {
         const response = await fetch(url, {
             headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret }
@@ -104,7 +104,7 @@ async function main() {
             console.log(`\n🔍 [키워드: ${keyword}] 수집 중...`);
             let keywordNews = [];
 
-            const gnUrl = config.googleNewsApi.replace('{keyword}', encodeURIComponent(keyword)).replace('{window}', windowCode);
+            const gnUrl = config.googleNewsApi.replace('{keyword}', encodeURIComponent('"' + keyword + '"')).replace('{window}', windowCode);
             const gnItems = await safeFetchRSS(gnUrl);
             const gnMapped = gnItems
                 .filter(item => isRecent(item.pubDate, config.timeWindow))
