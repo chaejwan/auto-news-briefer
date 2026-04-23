@@ -181,8 +181,20 @@ async function main() {
             if (!aiResult.summary.includes("유의미한 관련 기사가 없")) {
                 const selectedItems = aiResult.best_ids.map(id => items[id]).filter(item => item !== undefined);
                 
+                // ⭐ [업그레이드된 로직] 제목 제일 앞(괄호 무시)에 나오는 [단독] 기사만 최상단 끌어올리기
+                selectedItems.sort((a, b) => {
+                    // 정규식 설명: 문장 시작(^)에 공백이나 각종 괄호([, (, <, 【)가 0개 이상 있고, 바로 이어서 '단독'이 나오는 패턴
+                    const exclusiveRegex = /^[\s\[\(<【]*단독/;
+                    
+                    const aExclusive = exclusiveRegex.test(a.title);
+                    const bExclusive = exclusiveRegex.test(b.title);
+                    
+                    if (aExclusive && !bExclusive) return -1; // a가 진짜 단독 보도면 위로
+                    if (!aExclusive && bExclusive) return 1;  // b가 진짜 단독 보도면 위로
+                    return 0; // 둘 다 조건에 맞거나 둘 다 아니면 원래 순서 유지
+                });
+
                 selectedItems.forEach(n => {
-                    // ⭐ 변경 양식: 언론사 / 날짜 / 제목(링크)
                     finalHtmlContent += `<b>${n.source}</b> / ${n.date} / <a href="${n.link}" target="_blank" style="text-decoration:none; color:#1a73e8;">${n.title}</a><br>\n`;
                 });
             }
