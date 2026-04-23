@@ -1,7 +1,7 @@
 {
   "recipientEmail": "chaejwan@hd.com",
   "scheduleTime": "08:00",
-  "timeWindow": "1d"
+  "timeWindow": "1d",
   "googleNewsApi": "https://news.google.com/rss/search?q={keyword}&hl=ko&gl=KR&ceid=KR:ko&tbs=qdr:{window}",
   "keywords": [
     "한화오션",
