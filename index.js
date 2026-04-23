@@ -19,14 +19,29 @@ function formatDate(dateStr) {
     } catch (e) { return ''; }
 }
 
-// 네이버 기사의 HTML 태그(<b> 등) 제거 함수
+// ⭐ 핵심 추가: 설정된 기간(예: 1d, 24h)을 초과한 오래된 기사를 차단하는 함수
+function isRecent(dateStr, timeWindow) {
+    if (!dateStr) return false;
+    const pubDate = new Date(dateStr).getTime();
+    const now = Date.now();
+    let maxAgeHours = 24; // 기본값 24시간
+
+    if (timeWindow.includes('d')) {
+        maxAgeHours = parseInt(timeWindow) * 24;
+    } else if (timeWindow.includes('h')) {
+        maxAgeHours = parseInt(timeWindow);
+    }
+
+    const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
+    return (now - pubDate) <= maxAgeMs; // 현재 시간과 비교하여 제한 시간 이내인지 확인
+}
+
 function cleanHtml(text) {
     if (!text) return '';
     return text.replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 }
 
-// ⭐ 네이버 뉴스 API 호출 함수
-async function fetchNaverNews(keyword) {
+async function fetchNaverNews(keyword, timeWindow) {
     const clientId = process.env.NAVER_CLIENT_ID;
     const clientSecret = process.env.NAVER_CLIENT_SECRET;
     if (!clientId || !clientSecret) {
@@ -34,26 +49,25 @@ async function fetchNaverNews(keyword) {
         return [];
     }
 
-    // 네이버 API: 정확도순(sim)으로 최신 20개 검색
-    const url = `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(keyword)}&display=20&sort=sim`;
+    const url = `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(keyword)}&display=30&sort=date`;
 
     try {
         const response = await fetch(url, {
-            headers: {
-                'X-Naver-Client-Id': clientId,
-                'X-Naver-Client-Secret': clientSecret
-            }
+            headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret }
         });
         const data = await response.json();
         if (!data.items) return [];
 
-        return data.items.map(item => ({
-            source: '네이버뉴스', // 언론사 이름 대신 네이버뉴스로 통합 표기
-            title: cleanHtml(item.title),
-            link: item.link,
-            snippet: cleanHtml(item.description),
-            date: formatDate(item.pubDate)
-        }));
+        return data.items
+            .filter(item => isRecent(item.pubDate, timeWindow)) // ⭐ 네이버 뉴스도 철저히 시간 검사
+            .slice(0, 15) // 최신순으로 15개만 자르기
+            .map(item => ({
+                source: '네이버뉴스',
+                title: cleanHtml(item.title),
+                link: item.link,
+                snippet: cleanHtml(item.description),
+                date: formatDate(item.pubDate)
+            }));
     } catch (e) {
         console.error("❌ 네이버 API 에러:", e.message);
         return [];
@@ -82,14 +96,16 @@ async function main() {
             // 1. 구글 뉴스 수집
             const gnUrl = config.googleNewsApi.replace('{keyword}', encodeURIComponent(keyword)).replace('{window}', windowCode);
             const gnItems = await safeFetchRSS(gnUrl);
-            const gnMapped = gnItems.slice(0, 15).map(item => ({ 
-                source: '구글뉴스', title: item.title, link: item.link, snippet: (item.contentSnippet || '').substring(0, 150), date: formatDate(item.pubDate)
-            }));
+            const gnMapped = gnItems
+                .filter(item => isRecent(item.pubDate, config.timeWindow)) // ⭐ 구글 뉴스가 던진 옛날 기사 차단!
+                .slice(0, 15).map(item => ({ 
+                    source: '구글뉴스', title: item.title, link: item.link, snippet: (item.contentSnippet || '').substring(0, 150), date: formatDate(item.pubDate)
+                }));
             keywordNews = keywordNews.concat(gnMapped);
-            console.log(`   - 구글뉴스에서 ${gnMapped.length}개 발견`);
+            console.log(`   - 구글뉴스에서 ${gnMapped.length}개 발견 (오래된 기사 필터링 후)`);
 
-            // 2. ⭐ 네이버 뉴스 수집
-            const naverItems = await fetchNaverNews(keyword);
+            // 2. 네이버 뉴스 수집
+            const naverItems = await fetchNaverNews(keyword, config.timeWindow);
             keywordNews = keywordNews.concat(naverItems);
             console.log(`   - 네이버뉴스에서 ${naverItems.length}개 발견`);
 
