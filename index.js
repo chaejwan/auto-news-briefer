@@ -119,10 +119,9 @@ async function main() {
             // ⭐ [핵심 개선] URL 중복 + 제목 유사도 중복 철저 필터링
             const uniqueItems = [];
             keywordNews.forEach(item => {
-                const cleanUrl = item.link.split('?')[0];
-                item.link = cleanUrl;
+                // (물음표를 자르는 로직을 완전히 삭제했습니다. 원본 주소를 그대로 보존합니다.)
 
-                // 1차 방어: 똑같은 URL 차단
+                // 1차 방어: 똑같은 URL 차단 (원본 주소 그대로 비교)
                 const isUrlDuplicate = uniqueItems.some(existing => existing.link === item.link);
                 if (isUrlDuplicate) return;
 
