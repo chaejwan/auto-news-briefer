@@ -1,5 +1,5 @@
 {
-  "recipientEmail": "chaejwan@hd.com",
+  "recipientEmail": "chaejwan@hd.com", "donghoon.kwon@hd.com", "kalos@hd.com", "340014@hd.com", "wonseak.joo@hd.com",
   "scheduleTime": "08:00",
   "timeWindow": "1d",
   "googleNewsApi": "https://news.google.com/rss/search?q={keyword}&hl=ko&gl=KR&ceid=KR:ko&tbs=qdr:{window}",
